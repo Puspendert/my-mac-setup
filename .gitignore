@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Backups written when editing dotfiles (terminal-setup.sh creates these under $HOME;
+# ignored defensively in case the repo is ever run from / copied into a home dir)
+*.bak
+*.bak.*
+
+# Claude Code — keep the shared .claude/settings.json tracked, but ignore
+# per-machine, auto-generated local state.
+.claude/settings.local.json
+.claude/*.local.json
+
+# Logs / scratch
+*.log
