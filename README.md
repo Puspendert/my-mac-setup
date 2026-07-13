@@ -118,4 +118,19 @@ shellcheck terminal-setup.sh     # if installed
 See [CLAUDE.md](CLAUDE.md) for the full list of constraints, the gotchas already found,
 and how to unit-test the `~/.zshrc`-editing functions in isolation.
 
+## Optional
+
+If WezTerm doesn't show any separator in between the path and the command (see image for reference), then add the below line to `~/.zshrc` after `source $ZSH/oh-my-zsh.sh`.
+
 ![WezTerm no separator](images/wezterm-no-separator.png)
+
+```
+PROMPT+='%{$fg_bold[white]%}»%{$reset_color%} '
+```
+Use icon of your choice, I am using »
+
+After the fix:
+![WezTerm with separator](images/wezterm-with-separator.png)
+
+> [!NOTE]
+> **Disclaimer:** This shouldn't be needed for Powerlevel10k
