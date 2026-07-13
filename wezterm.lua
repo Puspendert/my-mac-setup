@@ -50,13 +50,10 @@ config.window_close_confirmation = 'AlwaysPrompt'
 local function maximize_window(window)
   if not window.gui_window then return end
 
-  local screen = wezterm.gui.screens().active
   local guiwin = window:gui_window()
-  if not screen or not guiwin then return end
+  if not guiwin then return end
 
-  -- window:gui_window():maximize() -- have long animation
-  guiwin:set_position(screen.x, screen.y)
-  guiwin:set_inner_size(screen.width, screen.height)
+  guiwin:maximize()
 end
 
 -- https://github.com/wez/wezterm/issues/3299#issuecomment-2145712082
