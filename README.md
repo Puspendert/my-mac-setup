@@ -117,3 +117,5 @@ shellcheck terminal-setup.sh     # if installed
 
 See [CLAUDE.md](CLAUDE.md) for the full list of constraints, the gotchas already found,
 and how to unit-test the `~/.zshrc`-editing functions in isolation.
+
+![WezTerm no separator](images/wezterm-no-separator.png)
