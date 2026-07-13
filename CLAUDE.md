@@ -6,8 +6,8 @@ Guidance for Claude Code when working in this repository.
 
 [`terminal-setup.sh`](terminal-setup.sh) is a single, **idempotent** macOS Bash script that provisions a
 WezTerm terminal environment: Homebrew, WezTerm, git, Oh My Zsh, the
-`zsh-autosuggestions` + `zsh-syntax-highlighting` plugins, and (optionally)
-Powerlevel10k. It is the only source file — there is no build step and no test framework.
+`zsh-autosuggestions` + `zsh-syntax-highlighting` plugins, (optionally) Powerlevel10k,
+and copies `wezterm.lua` to `~/.config/wezterm/wezterm.lua`. It is the only source file — there is no build step and no test framework.
 
 ## Hard constraints — do NOT break these
 
@@ -26,7 +26,8 @@ These are deliberate and load-bearing. Preserve them in every change.
    `set -e` (see Gotchas).
 4. **Deliberate non-actions** — never add these:
    - Do not create or modify `~/.wezterm.lua` (the user owns it). Powerlevel10k font
-     guidance is *printed* to the user, never written to that file.
+     guidance is *printed* to the user, never written to that file. Note: STEP 7 copies
+     `wezterm.lua` to `~/.config/wezterm/wezterm.lua` — that is intentional and distinct.
    - Do not run `chsh`.
    - Do not `source ~/.zshrc` (changes apply on the next shell).
    - Do not prompt for `sudo` unless Homebrew is genuinely absent — that is the only
@@ -36,7 +37,9 @@ These are deliberate and load-bearing. Preserve them in every change.
 ## Layout
 
 - `terminal-setup.sh` — the whole thing. Banner-commented sections: helpers → preflight →
-  sudo keep-alive → STEP 1–7 → summary.
+  sudo keep-alive → STEP 1–7 → STEP 8 (summary). STEP 7 copies `wezterm.lua` to
+  `~/.config/wezterm/wezterm.lua` (skipped if the destination already exists).
+- `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
 - `.claude/settings.local.json` — per-machine, auto-generated, **gitignored**.
 

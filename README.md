@@ -21,6 +21,7 @@ appended to `~/.zshrc` twice.
 | **zsh-autosuggestions** | Cloned into `$ZSH_CUSTOM/plugins` and added to your `plugins=(…)`. |
 | **zsh-syntax-highlighting** | Same — and kept **last** in the plugin list (it must load last). |
 | **Powerlevel10k** | Optional (you're prompted). Also installs the MesloLGS Nerd Font. |
+| **WezTerm config** | Copies `wezterm.lua` from the repo to `~/.config/wezterm/wezterm.lua` (skipped if already present). |
 
 ## Requirements
 
@@ -117,6 +118,40 @@ shellcheck terminal-setup.sh     # if installed
 
 See [CLAUDE.md](CLAUDE.md) for the full list of constraints, the gotchas already found,
 and how to unit-test the `~/.zshrc`-editing functions in isolation.
+
+## Key bindings
+
+These are defined in `~/.config/wezterm/wezterm.lua`.
+
+### Keyboard
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+T` | New tab (opens at `~`) |
+| `Cmd+W` | Close current pane |
+| `Cmd+Shift+W` | Close current tab |
+| `Cmd+D` | Split pane horizontally (opens at `~`) |
+| `Cmd+Shift+D` | Split pane vertically (opens at `~`) |
+| `Cmd+K` | Clear scrollback and viewport |
+| `Cmd+F` | Search (uses current selection if any) |
+| `Cmd+Shift+P` | Open command palette |
+| `Cmd+,` | Open `wezterm.lua` in VS Code |
+| `Cmd+Shift+E` | Rename current tab |
+| `Cmd+A` | Select semantic zone (smart select-all) |
+| `Cmd+←` | Move to beginning of line |
+| `Cmd+→` | Move to end of line |
+| `Cmd+Backspace` | Delete to beginning of line |
+| `Opt+Backspace` | Delete previous word |
+| `Opt+←` | Move one word backward |
+| `Opt+→` | Move one word forward |
+| `Cmd+Q` | Disabled (prevents accidental quit) |
+
+### Mouse
+
+| Action | Shortcut |
+| --- | --- |
+| Open link | `Cmd+Click` |
+| Extend selection | `Cmd+Drag` |
 
 ## Optional
 

@@ -420,7 +420,24 @@ else
 fi
 
 # ===========================================================================
-# STEP 7 — Final summary and next steps.
+# STEP 7 — Copy wezterm.lua to ~/.config/wezterm/wezterm.lua.
+# ===========================================================================
+WEZTERM_CONFIG_SRC="$(cd "$(dirname "$0")" && pwd)/wezterm.lua"
+WEZTERM_CONFIG_DEST="$HOME/.config/wezterm/wezterm.lua"
+
+if [[ -f "$WEZTERM_CONFIG_DEST" ]]; then
+  mark_skipped "~/.config/wezterm/wezterm.lua already exists"
+elif [[ ! -f "$WEZTERM_CONFIG_SRC" ]]; then
+  warn "wezterm.lua not found at $WEZTERM_CONFIG_SRC; skipping WezTerm config copy."
+else
+  mkdir -p "$HOME/.config/wezterm"
+  cp "$WEZTERM_CONFIG_SRC" "$WEZTERM_CONFIG_DEST"
+  mark_touched "$WEZTERM_CONFIG_DEST" "added"
+  mark_installed "WezTerm config -> $WEZTERM_CONFIG_DEST"
+fi
+
+# ===========================================================================
+# STEP 8 — Final summary and next steps.
 # ===========================================================================
 echo
 echo "================ Summary =================="
