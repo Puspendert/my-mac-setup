@@ -16,6 +16,10 @@ scripts:
   versions the user picks (via `corretto@N` casks), registers each with `jenv`, adds a
   guarded jenv block to `~/.zshrc`, enables the jenv `export` plugin, and optionally
   imports `.crt` certificates into each JDK's truststore.
+- [`devtools-setup.sh`](devtools-setup.sh) — installs a fixed set of developer tools via
+  Homebrew: the formulae `maven`, `git`, `awscli`, `dive` and the casks `docker-desktop`,
+  `bruno`. Each is guarded by `brew list` / `brew list --cask`; already-installed tools
+  are logged and skipped. Takes no input, needs no `sudo`, and edits no dotfiles.
 
 More setups are planned (see the roadmap in [README.md](README.md)).
 The constraints below apply to **every** script in the repo.
@@ -57,6 +61,10 @@ These are deliberate and load-bearing. Preserve them in every change.
 - `java-setup.sh` — the Java setup. Numbered sections: 0 preconditions → 1 install jenv →
   2 configure `~/.zshrc` → 3 pick + install Corretto versions → 4 register with jenv +
   enable export plugin → 5 optional cert import → 6 summary.
+- `devtools-setup.sh` — the developer-tools setup. Numbered sections: 0 preconditions →
+  1 install formulae → 2 install casks → 3 summary. Package lists live in the
+  space-delimited `FORMULAE` / `CASKS` vars near the top; the `append` helper builds the
+  installed/present/failed summary strings without leading spaces.
 - `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by
   `terminal-setup.sh` STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
@@ -85,6 +93,9 @@ JDKs. Instead:
   `# >>> jenv setup >>>` block is appended only when `grep -qF` doesn't find its marker,
   and the export plugin is enabled only when `~/.jenv/plugins/export` is absent. Confirm
   a second run re-triggers neither.
+- For `devtools-setup.sh`, the idempotency guard is the per-package `brew list` /
+  `brew list --cask` check in each install loop — confirm an already-installed package is
+  logged and skipped, so a second run installs nothing.
 
 ## Gotchas already found (don't reintroduce)
 

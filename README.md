@@ -4,9 +4,9 @@ A growing collection of **idempotent** macOS setup scripts for provisioning a fr
 (or existing) developer machine. Each script owns one concern, checks state before it
 acts, and is **safe to re-run** — nothing is ever installed, cloned, or appended twice.
 
-Today the repo provisions a **terminal environment** and a **Java toolchain**. It will
-expand over time to cover IDEs, editors, and other language runtimes (see
-[Roadmap](#roadmap)).
+Today the repo provisions a **terminal environment**, a **Java toolchain**, and a
+common set of **developer tools**. It will expand over time to cover IDEs, editors, and
+other language runtimes (see [Roadmap](#roadmap)).
 
 ## Available setups
 
@@ -14,6 +14,7 @@ expand over time to cover IDEs, editors, and other language runtimes (see
 |--------------|------------------------------------------|-------------------------------------------------------------------------------------|
 | **Terminal** | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config |
 | **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs         |
+| **Devtools** | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                   |
 
 Each script is standalone — run only the ones you need, in any order.
 
@@ -129,18 +130,60 @@ automatically once you restart your shell.
 
 ---
 
+## Devtools setup
+
+[`devtools-setup.sh`](devtools-setup.sh) installs a common set of developer tools via
+Homebrew. Anything already installed is logged and skipped, so it's safe to re-run.
+
+### What it sets up
+
+| Tool               | Package                    | Notes                                                                       |
+|--------------------|----------------------------|-----------------------------------------------------------------------------|
+| **Maven**          | `maven` (formula)          | Build tool for Java projects.                                               |
+| **Docker Desktop** | `docker-desktop` (cask)    | GUI app — launch it once so the Docker daemon starts before using `docker`. |
+| **Bruno**          | `bruno` (cask)             | Offline-first API client.                                                   |
+| **git**            | `git` (formula)            | Installed via Homebrew if not already available.                            |
+| **AWS CLI**        | `awscli` (formula)         | Provides the `aws` command.                                                 |
+| **dive**           | `dive` (formula)           | Inspect Docker image layers (needs the Docker daemon running).              |
+
+### Usage
+
+```sh
+chmod +x devtools-setup.sh
+./devtools-setup.sh
+```
+
+The script takes no input. It checks each tool with `brew list` (or `brew list --cask`),
+installs the ones that are missing, and continues past any single failure. At the end it
+prints a summary of what was **newly installed**, **already present**, and **failed**.
+
+### After it runs
+
+- Launch **Docker Desktop** once from Applications (or `open -a "Docker"`) so the daemon
+  starts before you use `docker` or `dive`.
+- Confirm AWS CLI: `aws --version`
+
+---
+
 ## Roadmap
 
 Planned setups:
 
-- [x] Terminal (WezTerm + Oh My Zsh)
-- [x] Java (`jenv` + Corretto)
-- [x] IntelliJ Toolbox for IDEs (Not required, install manually)
-- [x] VS Code (Not required, install manually)
-- [x] Obsidian (Not required, install manually)
+- [ ] Terminal (WezTerm + Oh My Zsh)
+- [ ] Java (`jenv` + Corretto)
+- [ ] IntelliJ Toolbox for IDEs (Not required, install manually)
+- [ ] VS Code (Not required, install manually)
+- [ ] Obsidian (Not required, install manually)
 - [ ] Python
 - [ ] Node.js
-- [ ] Docker
+- [ ] Docker Desktop
+- [ ] Maven
+- [ ] Bruno
+- [ ] git
+- [ ] awscli
+- [ ] dive
+
+Devtools like docker-desktop, bruno, maven, git, awscli, dive are installed using `devtools-setup.sh` 
 
 ## What these scripts deliberately do NOT do
 
@@ -175,6 +218,7 @@ To revert manually:
 .
 ├── terminal-setup.sh        # terminal environment setup
 ├── java-setup.sh            # jenv + Corretto Java setup
+├── devtools-setup.sh        # developer tools (Maven, Docker Desktop, Bruno, git, AWS CLI, dive)
 ├── wezterm.lua              # WezTerm config (copied by terminal-setup.sh)
 ├── checklist.md             # roadmap of planned setups
 ├── README.md                # this file
@@ -194,6 +238,7 @@ it. Verify changes *without* running an installer end-to-end:
 ```sh
 /bin/bash -n terminal-setup.sh   # syntax check on bash 3.2
 /bin/bash -n java-setup.sh
+/bin/bash -n devtools-setup.sh
 shellcheck terminal-setup.sh     # if installed
 ```
 
