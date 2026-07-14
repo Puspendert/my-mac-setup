@@ -1,38 +1,53 @@
 # my-mac-setup
 
-An **idempotent** macOS setup script that provisions a
-[WezTerm](https://wezfurlong.org/wezterm/) terminal environment: Homebrew, WezTerm,
-git, [Oh My Zsh](https://ohmyz.sh/), the `zsh-autosuggestions` and
-`zsh-syntax-highlighting` plugins, and (optionally) the
-[Powerlevel10k](https://github.com/romkatv/powerlevel10k) prompt.
+A growing collection of **idempotent** macOS setup scripts for provisioning a fresh
+(or existing) developer machine. Each script owns one concern, checks state before it
+acts, and is **safe to re-run** — nothing is ever installed, cloned, or appended twice.
 
-It's all one script — [`terminal-setup.sh`](terminal-setup.sh) — and it's **safe to
-re-run**. Every step checks before it acts, so nothing is ever installed, cloned, or
-appended to `~/.zshrc` twice.
+Today the repo provisions a **terminal environment** and a **Java toolchain**. It will
+expand over time to cover IDEs, editors, and other language runtimes (see
+[Roadmap](#roadmap)).
 
-## What it sets up
+## Available setups
 
-| Component | Notes |
-| --- | --- |
-| **Homebrew** | Installed only if missing — the one step that needs `sudo`. |
-| **WezTerm** | `brew install --cask wezterm` (skipped if already present). |
-| **git** | Installed via Homebrew if not already available. |
-| **Oh My Zsh** | Unattended install; does **not** change your login shell or open a new shell. |
-| **zsh-autosuggestions** | Cloned into `$ZSH_CUSTOM/plugins` and added to your `plugins=(…)`. |
-| **zsh-syntax-highlighting** | Same — and kept **last** in the plugin list (it must load last). |
-| **Powerlevel10k** | Optional (you're prompted). Also installs the MesloLGS Nerd Font. |
-| **WezTerm config** | Copies `wezterm.lua` from the repo to `~/.config/wezterm/wezterm.lua` (skipped if already present). |
+| Setup        | Script                                   | What it does                                                                        |
+|--------------|------------------------------------------|-------------------------------------------------------------------------------------|
+| **Terminal** | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config |
+| **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs         |
+
+Each script is standalone — run only the ones you need, in any order.
 
 ## Requirements
 
 - macOS (Apple Silicon or Intel).
 - `zsh` as your shell (the macOS default).
 - An internet connection.
-- Administrator rights — **only** if Homebrew is not already installed.
+- Administrator rights — **only** where noted per script.
 
-## Usage
+---
 
-From inside the repo:
+## Terminal setup
+
+[`terminal-setup.sh`](terminal-setup.sh) provisions a
+[WezTerm](https://wezfurlong.org/wezterm/) terminal: Homebrew, WezTerm, git,
+[Oh My Zsh](https://ohmyz.sh/), the `zsh-autosuggestions` and
+`zsh-syntax-highlighting` plugins, and (optionally) the
+[Powerlevel10k](https://github.com/romkatv/powerlevel10k) prompt.
+
+### What it sets up
+
+| Component                   | Notes                                                                                               |
+|-----------------------------|-----------------------------------------------------------------------------------------------------|
+| **Homebrew**                | Installed only if missing — the one step that needs `sudo`.                                         |
+| **WezTerm**                 | `brew install --cask wezterm` (skipped if already present).                                         |
+| **git**                     | Installed via Homebrew if not already available.                                                    |
+| **Oh My Zsh**               | Unattended install; does **not** change your login shell or open a new shell.                       |
+| **zsh-autosuggestions**     | Cloned into `$ZSH_CUSTOM/plugins` and added to your `plugins=(…)`.                                  |
+| **zsh-syntax-highlighting** | Same — and kept **last** in the plugin list (it must load last).                                    |
+| **Powerlevel10k**           | Optional (you're prompted). Also installs the MesloLGS Nerd Font.                                   |
+| **WezTerm config**          | Copies `wezterm.lua` from the repo to `~/.config/wezterm/wezterm.lua` (skipped if already present). |
+
+### Usage
 
 ```sh
 chmod +x terminal-setup.sh
@@ -49,7 +64,7 @@ If Homebrew is missing, the script explains why it needs your password, caches i
 front with `sudo -v`, and keeps it warm in the background for the duration of the run
 (the keep-alive is torn down automatically when the script exits).
 
-## After it runs
+### After it runs
 
 - **Restart WezTerm** (or open a new tab/window). Changes to `~/.zshrc` apply to new
   shells — the script never `source`s it for you.
@@ -68,38 +83,103 @@ front with `sudo -v`, and keeps it warm in the background for the duration of th
 At the end, the script prints a summary of what was **installed**, what was **skipped**,
 and every **file it created or modified** so you can see exactly what changed.
 
-## What it deliberately does NOT do
+---
 
-- Never creates or modifies **`~/.wezterm.lua`** — your WezTerm config is yours (the
+## Java setup
+
+[`java-setup.sh`](java-setup.sh) installs [`jenv`](https://www.jenv.be/), installs the
+[Amazon Corretto](https://aws.amazon.com/corretto/) JDK versions you choose via Homebrew
+casks, registers each with jenv, and wires jenv into your `~/.zshrc` so you can switch
+Java versions per-shell or per-project. It can also import custom certificates into each
+JDK's truststore.
+
+### What it sets up
+
+| Component                  | Notes                                                                                                                                               |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **jenv**                   | Installed via Homebrew if missing.                                                                                                                  |
+| **jenv shell integration** | Adds a guarded `# >>> jenv setup >>>` block to `~/.zshrc` (never duplicated).                                                                       |
+| **Corretto JDKs**          | You pick the major versions (e.g. `11,17,21,25`); each valid `corretto@N` cask is installed. Versions with no matching cask are logged and skipped. |
+| **jenv registration**      | Each installed JDK is resolved via `/usr/libexec/java_home` and added with `jenv add`.                                                              |
+| **export plugin**          | Enables the jenv `export` plugin so `JAVA_HOME` follows the active jenv version automatically.                                                      |
+| **Truststore certs**       | Optional (you're prompted). Imports every `.crt` in a folder you choose into each JDK's `cacerts` (requires `sudo`).                                |
+
+### Usage
+
+```sh
+chmod +x java-setup.sh
+./java-setup.sh
+```
+
+The script prompts you for:
+
+1. **Corretto versions** — comma-separated major versions (e.g. `11,17,21,25`).
+2. **Certificate import** — a `y/N` prompt; if `y`, it asks for a folder of `.crt`
+   files to import into the JDK truststores (needs your password for `sudo`).
+
+### After it runs
+
+- **Open a new terminal** (or `source ~/.zshrc`) so the jenv integration takes effect.
+- Set a global default: `jenv global 21`
+- Pin a version per project: `cd my-project && jenv local 17`
+- Confirm: `java -version`
+
+Because the export plugin is enabled, `JAVA_HOME` tracks the active jenv version
+automatically once you restart your shell.
+
+---
+
+## Roadmap
+
+Planned setups:
+
+- [x] Terminal (WezTerm + Oh My Zsh)
+- [x] Java (`jenv` + Corretto)
+- [x] IntelliJ Toolbox for IDEs (Not required, install manually)
+- [x] VS Code (Not required, install manually)
+- [x] Obsidian (Not required, install manually)
+- [ ] Python
+- [ ] Node.js
+- [ ] Docker
+
+## What these scripts deliberately do NOT do
+
+- Never create or modify **`~/.wezterm.lua`** — your WezTerm config is yours (the
   Powerlevel10k font tip is *printed*, never written).
-- Never runs **`chsh`** — your login shell is left untouched.
-- Never **`source`s** `~/.zshrc`.
-- Only asks for **`sudo`** when Homebrew genuinely needs installing.
+- Never run **`chsh`** — your login shell is left untouched.
+- Never **`source`** `~/.zshrc` — changes apply on your next shell.
+- Only ask for **`sudo`** when genuinely required (installing Homebrew, or writing to a
+  JDK truststore).
 
 ## Safety & rollback
 
-There is no built-in uninstall, but the script leaves you clear restore points:
+There is no built-in uninstall, but the scripts leave clear restore points:
 
-- Before editing `~/.zshrc`, it backs the file up to `~/.zshrc.bak.<timestamp>` (once
-  per run).
+- Before editing `~/.zshrc`, the terminal script backs it up to
+  `~/.zshrc.bak.<timestamp>` (once per run).
 - On a first-time Oh My Zsh install, your original `~/.zshrc` is preserved by OMZ as
   `~/.zshrc.pre-oh-my-zsh`.
 
 To revert manually:
 
-- Restore a `~/.zshrc` backup (or `~/.zshrc.pre-oh-my-zsh`).
-- Remove the cloned directories under `~/.oh-my-zsh/custom/plugins` and
+- Restore a `~/.zshrc` backup (or `~/.zshrc.pre-oh-my-zsh`), or remove the guarded
+  `# >>> jenv setup >>>` block.
+- Remove cloned directories under `~/.oh-my-zsh/custom/plugins` and
   `~/.oh-my-zsh/custom/themes`.
-- Uninstall Homebrew packages with `brew uninstall` / `brew uninstall --cask` if you
-  want them gone.
+- Uninstall Homebrew packages with `brew uninstall` / `brew uninstall --cask`.
+- Remove a registered JDK from jenv with `jenv remove <version>`.
 
 ## Repository layout
 
 ```
 .
-├── terminal-setup.sh        # the entire setup script
+├── terminal-setup.sh        # terminal environment setup
+├── java-setup.sh            # jenv + Corretto Java setup
+├── wezterm.lua              # WezTerm config (copied by terminal-setup.sh)
+├── checklist.md             # roadmap of planned setups
 ├── README.md                # this file
 ├── CLAUDE.md                # guidance for Claude Code / contributors
+├── images/                  # screenshots used in this README
 ├── .gitignore
 └── .claude/
     ├── settings.json        # shared, safe verification permissions
@@ -108,11 +188,12 @@ To revert manually:
 
 ## Development
 
-The script targets the **stock macOS `/bin/bash` (3.2)** and must stay compatible with
-it. Verify changes *without* running the installer end-to-end:
+The scripts target the **stock macOS `/bin/bash` (3.2)** and must stay compatible with
+it. Verify changes *without* running an installer end-to-end:
 
 ```sh
 /bin/bash -n terminal-setup.sh   # syntax check on bash 3.2
+/bin/bash -n java-setup.sh
 shellcheck terminal-setup.sh     # if installed
 ```
 
@@ -125,37 +206,38 @@ These are defined in `~/.config/wezterm/wezterm.lua`.
 
 ### Keyboard
 
-| Shortcut | Action |
-| --- | --- |
-| `Cmd+T` | New tab (opens at `~`) |
-| `Cmd+W` | Close current pane |
-| `Cmd+Shift+W` | Close current tab |
-| `Cmd+D` | Split pane horizontally (opens at `~`) |
-| `Cmd+Shift+D` | Split pane vertically (opens at `~`) |
-| `Cmd+K` | Clear scrollback and viewport |
-| `Cmd+F` | Search (uses current selection if any) |
-| `Cmd+Shift+P` | Open command palette |
-| `Cmd+,` | Open `wezterm.lua` in VS Code |
-| `Cmd+Shift+E` | Rename current tab |
-| `Cmd+A` | Select semantic zone (smart select-all) |
-| `Cmd+←` | Move to beginning of line |
-| `Cmd+→` | Move to end of line |
-| `Cmd+Backspace` | Delete to beginning of line |
-| `Opt+Backspace` | Delete previous word |
-| `Opt+←` | Move one word backward |
-| `Opt+→` | Move one word forward |
-| `Cmd+Q` | Disabled (prevents accidental quit) |
+| Shortcut        | Action                                  |
+|-----------------|-----------------------------------------|
+| `Cmd+T`         | New tab (opens at `~`)                  |
+| `Cmd+W`         | Close current pane                      |
+| `Cmd+Shift+W`   | Close current tab                       |
+| `Cmd+D`         | Split pane horizontally (opens at `~`)  |
+| `Cmd+Shift+D`   | Split pane vertically (opens at `~`)    |
+| `Cmd+K`         | Clear scrollback and viewport           |
+| `Cmd+F`         | Search (uses current selection if any)  |
+| `Cmd+Shift+P`   | Open command palette                    |
+| `Cmd+,`         | Open `wezterm.lua` in VS Code           |
+| `Cmd+Shift+E`   | Rename current tab                      |
+| `Cmd+A`         | Select semantic zone (smart select-all) |
+| `Cmd+←`         | Move to beginning of line               |
+| `Cmd+→`         | Move to end of line                     |
+| `Cmd+Backspace` | Delete to beginning of line             |
+| `Opt+Backspace` | Delete previous word                    |
+| `Opt+←`         | Move one word backward                  |
+| `Opt+→`         | Move one word forward                   |
+| `Cmd+Q`         | Disabled (prevents accidental quit)     |
 
 ### Mouse
 
-| Action | Shortcut |
-| --- | --- |
-| Open link | `Cmd+Click` |
-| Extend selection | `Cmd+Drag` |
+| Action           | Shortcut    |
+|------------------|-------------|
+| Open link        | `Cmd+Click` |
+| Extend selection | `Cmd+Drag`  |
 
-## Optional
+## Optional: terminal prompt separator
 
-If WezTerm doesn't show any separator in between the path and the command (see image for reference), then add the below line to `~/.zshrc` after `source $ZSH/oh-my-zsh.sh`.
+If WezTerm doesn't show any separator in between the path and the command (see image for
+reference), then add the below line to `~/.zshrc` after `source $ZSH/oh-my-zsh.sh`.
 
 ![WezTerm no separator](images/wezterm-no-separator.png)
 

@@ -4,10 +4,21 @@ Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-[`terminal-setup.sh`](terminal-setup.sh) is a single, **idempotent** macOS Bash script that provisions a
-WezTerm terminal environment: Homebrew, WezTerm, git, Oh My Zsh, the
-`zsh-autosuggestions` + `zsh-syntax-highlighting` plugins, (optionally) Powerlevel10k,
-and copies `wezterm.lua` to `~/.config/wezterm/wezterm.lua`. It is the only source file — there is no build step and no test framework.
+A growing collection of **idempotent** macOS Bash setup scripts. Each script owns one
+concern and is safe to re-run. There is no build step and no test framework. Current
+scripts:
+
+- [`terminal-setup.sh`](terminal-setup.sh) — provisions a WezTerm terminal environment:
+  Homebrew, WezTerm, git, Oh My Zsh, the `zsh-autosuggestions` +
+  `zsh-syntax-highlighting` plugins, (optionally) Powerlevel10k, and copies
+  `wezterm.lua` to `~/.config/wezterm/wezterm.lua`.
+- [`java-setup.sh`](java-setup.sh) — installs `jenv`, installs the Amazon Corretto JDK
+  versions the user picks (via `corretto@N` casks), registers each with `jenv`, adds a
+  guarded jenv block to `~/.zshrc`, enables the jenv `export` plugin, and optionally
+  imports `.crt` certificates into each JDK's truststore.
+
+More setups are planned (see the roadmap in [README.md](README.md)).
+The constraints below apply to **every** script in the repo.
 
 ## Hard constraints — do NOT break these
 
@@ -19,9 +30,11 @@ These are deliberate and load-bearing. Preserve them in every change.
    `"${arr[@]}"` under `set -u`. Prefer space-delimited strings plus the `contains_word`
    helper over associative arrays. Always syntax-check with the **stock** bash:
    `/bin/bash -n terminal-setup.sh`.
-2. **Idempotent.** Re-running must never duplicate anything — installs, git clones, or
-   lines in `~/.zshrc`. Every step checks before it acts. When you touch any
-   `~/.zshrc`-editing logic, confirm that a second run is a no-op.
+2. **Idempotent.** Re-running any script must never duplicate anything — installs, git
+   clones, jenv registrations, or lines in `~/.zshrc`. Every step checks before it acts.
+   When you touch any `~/.zshrc`-editing logic, confirm that a second run is a no-op.
+   `java-setup.sh` guards its `~/.zshrc` edit with a `# >>> jenv setup >>>` marker and
+   guards the export plugin on the `~/.jenv/plugins/export` symlink — preserve both.
 3. **Fail fast.** Keep `set -euo pipefail` at the top. Watch for constructs that trip
    `set -e` (see Gotchas).
 4. **Deliberate non-actions** — never add these:
@@ -30,27 +43,35 @@ These are deliberate and load-bearing. Preserve them in every change.
      `wezterm.lua` to `~/.config/wezterm/wezterm.lua` — that is intentional and distinct.
    - Do not run `chsh`.
    - Do not `source ~/.zshrc` (changes apply on the next shell).
-   - Do not prompt for `sudo` unless Homebrew is genuinely absent — that is the only
-     step that needs it. When it is needed, a background keep-alive refreshes the
-     credential and an `EXIT` trap tears it down.
+   - `terminal-setup.sh`: do not prompt for `sudo` unless Homebrew is genuinely absent —
+     that is the only step that needs it. When it is needed, a background keep-alive
+     refreshes the credential and an `EXIT` trap tears it down.
+   - `java-setup.sh`: only the optional truststore import needs `sudo` (writing to each
+     JDK's `cacerts`); everything else runs unprivileged. Keep it that way.
 
 ## Layout
 
-- `terminal-setup.sh` — the whole thing. Banner-commented sections: helpers → preflight →
-  sudo keep-alive → STEP 1–7 → STEP 8 (summary). STEP 7 copies `wezterm.lua` to
-  `~/.config/wezterm/wezterm.lua` (skipped if the destination already exists).
-- `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by STEP 7.
+- `terminal-setup.sh` — the terminal setup. Banner-commented sections: helpers →
+  preflight → sudo keep-alive → STEP 1–7 → STEP 8 (summary). STEP 7 copies `wezterm.lua`
+  to `~/.config/wezterm/wezterm.lua` (skipped if the destination already exists).
+- `java-setup.sh` — the Java setup. Numbered sections: 0 preconditions → 1 install jenv →
+  2 configure `~/.zshrc` → 3 pick + install Corretto versions → 4 register with jenv +
+  enable export plugin → 5 optional cert import → 6 summary.
+- `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by
+  `terminal-setup.sh` STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
 - `.claude/settings.local.json` — per-machine, auto-generated, **gitignored**.
 
 ## How to verify changes safely
 
-Do **not** run `terminal-setup.sh` end-to-end to test it — it installs Homebrew and casks.
-Instead:
+Do **not** run either script end-to-end to test it — they install Homebrew, casks, and
+JDKs. Instead:
 
-- `/bin/bash -n terminal-setup.sh` — syntax check (use stock bash to catch 3.2 issues).
-- `shellcheck terminal-setup.sh` — if installed.
-- Unit-test the two risky `~/.zshrc`-editing functions in isolation. Extract one with
+- `/bin/bash -n <script>.sh` — syntax check (use stock bash to catch 3.2 issues). Run it
+  for whichever script(s) you touched, e.g. `terminal-setup.sh` and/or `java-setup.sh`.
+- `shellcheck <script>.sh` — if installed.
+- For `terminal-setup.sh`, unit-test the two risky `~/.zshrc`-editing functions in
+  isolation. Extract one with
   `awk` and source it against a throwaway `$HOME` with a sample `.zshrc`, then assert a
   second call is a no-op:
   ```sh
@@ -60,6 +81,10 @@ Instead:
   ```
   The functions that must stay idempotent: **`configure_plugins_line`** and
   **`set_zsh_theme`**.
+- For `java-setup.sh`, the idempotency guards to re-check by hand: the
+  `# >>> jenv setup >>>` block is appended only when `grep -qF` doesn't find its marker,
+  and the export plugin is enabled only when `~/.jenv/plugins/export` is absent. Confirm
+  a second run re-triggers neither.
 
 ## Gotchas already found (don't reintroduce)
 

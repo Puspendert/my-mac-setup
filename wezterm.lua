@@ -18,7 +18,7 @@ local function scheme_for_appearance(a)
 end
 
 config.font = wezterm.font { family = 'JetBrains Mono', weight = 'Medium', harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } }
-config.font_size = 15.0
+config.font_size = 14.0
 config.line_height = 1.0
 config.bold_brightens_ansi_colors = true
 config.color_scheme = scheme_for_appearance(wezterm.gui.get_appearance())
@@ -34,7 +34,7 @@ config.tab_max_width = 32
 config.show_new_tab_button_in_tab_bar = false
 -- config.hide_tab_bar_if_only_one_tab = true -- sometimes procude wrong window size on maximize
 
-config.default_cursor_style = 'BlinkingBar'
+config.default_cursor_style = 'BlinkingBlock'
 config.animation_fps = 1
 config.cursor_blink_rate = 500
 config.prefer_egl = true
