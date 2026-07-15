@@ -354,6 +354,7 @@ Planned setups:
   - <if required, add/remove to/from `devtools-setup.sh`>
 - [x] IntelliJ Toolbox for IDEs (Not required, install manually)
 - [x] Backup Claude memory (`claude-backup.sh`)
+- [ ] Backup database setups from DataGrip/DBeaver
 
 ## What these scripts deliberately do NOT do
 
