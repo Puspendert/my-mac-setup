@@ -20,6 +20,10 @@ scripts:
   Homebrew: the formulae `maven`, `git`, `awscli`, `dive` and the casks `docker-desktop`,
   `bruno`. Each is guarded by `brew list` / `brew list --cask`; already-installed tools
   are logged and skipped. Takes no input, needs no `sudo`, and edits no dotfiles.
+- [`python-setup.sh`](python-setup.sh) — installs the CPython build dependencies, installs
+  `pyenv`, adds a guarded pyenv block to `~/.zshrc`, installs the Python versions the user
+  picks (via `pyenv install`, resolving `X.Y` prefixes with `pyenv latest`), and optionally
+  sets one as the global default. Compiles Python from source; needs no `sudo`.
 
 More setups are planned (see the roadmap in [README.md](README.md)).
 The constraints below apply to **every** script in the repo.
@@ -65,6 +69,11 @@ These are deliberate and load-bearing. Preserve them in every change.
   1 install formulae → 2 install casks → 3 summary. Package lists live in the
   space-delimited `FORMULAE` / `CASKS` vars near the top; the `append` helper builds the
   installed/present/failed summary strings without leading spaces.
+- `python-setup.sh` — the Python setup. Numbered sections: 0 preconditions → 1 install
+  build deps → 2 install pyenv → 3 configure `~/.zshrc` → 4 pick + install Python versions
+  → 5 optional global default → 6 summary. The build-dep list lives in the space-delimited
+  `BUILD_DEPS` var near the top; the `~/.zshrc` edit is guarded by a `# >>> pyenv setup >>>`
+  marker.
 - `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by
   `terminal-setup.sh` STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
@@ -96,6 +105,11 @@ JDKs. Instead:
 - For `devtools-setup.sh`, the idempotency guard is the per-package `brew list` /
   `brew list --cask` check in each install loop — confirm an already-installed package is
   logged and skipped, so a second run installs nothing.
+- For `python-setup.sh`, the idempotency guards to re-check by hand: the
+  `# >>> pyenv setup >>>` block is appended only when `grep -qF` doesn't find its marker;
+  the build-dep loop skips any dep `brew list` already reports; and each Python version is
+  installed only when `pyenv versions --bare` doesn't already list the resolved version.
+  Confirm a second run re-triggers none of them.
 
 ## Gotchas already found (don't reintroduce)
 

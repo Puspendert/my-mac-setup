@@ -10,11 +10,12 @@ other language runtimes (see [Roadmap](#roadmap)).
 
 ## Available setups
 
-| Setup        | Script                                   | What it does                                                                        |
-|--------------|------------------------------------------|-------------------------------------------------------------------------------------|
-| **Terminal** | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config |
-| **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs         |
-| **Devtools** | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                   |
+| Setup        | Script                                   | What it does                                                                                      |
+|--------------|------------------------------------------|---------------------------------------------------------------------------------------------------|
+| **Terminal** | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config               |
+| **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs                       |
+| **Devtools** | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                                 |
+| **Python**   | [`python-setup.sh`](python-setup.sh)     | `pyenv` + build deps, pyenv shell wiring, the Python versions you choose, optional global default |
 
 Each script is standalone — run only the ones you need, in any order.
 
@@ -128,6 +129,8 @@ The script prompts you for:
 Because the export plugin is enabled, `JAVA_HOME` tracks the active jenv version
 automatically once you restart your shell.
 
+**Docs:** [jenv](https://www.jenv.be/)
+
 ---
 
 ## Devtools setup
@@ -165,6 +168,51 @@ prints a summary of what was **newly installed**, **already present**, and **fai
 
 ---
 
+## Python setup
+
+[`python-setup.sh`](python-setup.sh) installs [`pyenv`](https://github.com/pyenv/pyenv),
+installs the Python versions you choose, and wires pyenv into your `~/.zshrc` so you can
+switch Python versions per-shell or per-project — the Python equivalent of the Java
+(`jenv`) setup. Because pyenv **compiles CPython from source**, the required build
+dependencies are installed first.
+
+### What it sets up
+
+| Component                   | Notes                                                                                                                                                                   |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Build dependencies**      | `openssl`, `readline`, `sqlite3`, `xz`, `zlib`, `tcl-tk` via Homebrew (skipped if already present) — needed to compile CPython.                                         |
+| **pyenv**                   | Installed via Homebrew if missing.                                                                                                                                      |
+| **pyenv shell integration** | Adds a guarded `# >>> pyenv setup >>>` block to `~/.zshrc` (never duplicated).                                                                                          |
+| **Python versions**         | You pick them (e.g. `3.11,3.12,3.13`); an `X.Y` is resolved to the latest patch. Each is built with `pyenv install`. Versions pyenv can't build are logged and skipped. |
+| **Global default**          | Optional (you're prompted). Sets the first installed version as the global Python via `pyenv global`.                                                                   |
+
+### Usage
+
+```sh
+chmod +x python-setup.sh
+./python-setup.sh
+```
+
+The script prompts you for:
+
+1. **Python versions** — comma-separated `X.Y` or `X.Y.Z` (e.g. `3.11,3.12,3.13`).
+2. **Global default** — a `y/N` prompt to set the first installed version as your global
+   Python.
+
+### After it runs
+
+- **Open a new terminal** (or `source ~/.zshrc`) so the pyenv integration takes effect.
+- Set a global default: `pyenv global 3.12`
+- Pin a version per project: `cd my-project && pyenv local 3.11`
+- Confirm: `python --version`
+
+pyenv shims are on your `PATH` via the setup block, so `python` follows the active pyenv
+version once you restart your shell.
+
+**Docs:** [pyenv](https://github.com/pyenv/pyenv)
+
+---
+
 ## Roadmap
 
 Planned setups:
@@ -174,7 +222,7 @@ Planned setups:
 - [ ] IntelliJ Toolbox for IDEs (Not required, install manually)
 - [ ] VS Code (Not required, install manually)
 - [ ] Obsidian (Not required, install manually)
-- [ ] Python
+- [x] Python (`pyenv`)
 - [ ] Node.js
 - [ ] Docker Desktop
 - [ ] Maven
@@ -219,6 +267,7 @@ To revert manually:
 ├── terminal-setup.sh        # terminal environment setup
 ├── java-setup.sh            # jenv + Corretto Java setup
 ├── devtools-setup.sh        # developer tools (Maven, Docker Desktop, Bruno, git, AWS CLI, dive)
+├── python-setup.sh          # pyenv + Python versions setup
 ├── wezterm.lua              # WezTerm config (copied by terminal-setup.sh)
 ├── checklist.md             # roadmap of planned setups
 ├── README.md                # this file
@@ -239,6 +288,7 @@ it. Verify changes *without* running an installer end-to-end:
 /bin/bash -n terminal-setup.sh   # syntax check on bash 3.2
 /bin/bash -n java-setup.sh
 /bin/bash -n devtools-setup.sh
+/bin/bash -n python-setup.sh
 shellcheck terminal-setup.sh     # if installed
 ```
 

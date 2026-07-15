@@ -7,6 +7,8 @@
 #
 # Anything already installed is logged and skipped — safe to re-run.
 #
+# Written for the stock macOS /bin/bash (3.2) — no bash 4+ features are used.
+#
 # Usage:
 #   chmod +x devtools-setup.sh
 #   ./devtools-setup.sh

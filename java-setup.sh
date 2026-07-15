@@ -8,6 +8,8 @@
 #
 # Safe to re-run: every step checks state before acting.
 #
+# Written for the stock macOS /bin/bash (3.2) — no bash 4+ features are used.
+#
 # Usage:
 #   chmod +x setup-jenv-corretto.sh
 #   ./setup-jenv-corretto.sh
@@ -241,4 +243,5 @@ Next steps:
 
 The jenv export plugin is enabled, so JAVA_HOME automatically follows the
 active jenv version once you restart your shell (step 1).
+Docs: https://www.jenv.be/
 EOF
