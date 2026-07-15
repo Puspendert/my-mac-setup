@@ -10,13 +10,14 @@ other language runtimes (see [Roadmap](#roadmap)).
 
 ## Available setups
 
-| Setup        | Script                                   | What it does                                                                                      |
-|--------------|------------------------------------------|---------------------------------------------------------------------------------------------------|
-| **Terminal** | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config               |
-| **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs                       |
-| **Devtools** | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                                 |
-| **Python**   | [`python-setup.sh`](python-setup.sh)     | `pyenv` + build deps, pyenv shell wiring, the Python versions you choose, optional global default |
-| **Node.js**  | [`node-setup.sh`](node-setup.sh)         | `fnm` + fnm shell wiring, the Node.js versions you choose, optional global default                |
+| Setup             | Script                                   | What it does                                                                                      |
+|-------------------|------------------------------------------|---------------------------------------------------------------------------------------------------|
+| **Terminal**      | [`terminal-setup.sh`](terminal-setup.sh) | Homebrew, WezTerm, git, Oh My Zsh + plugins, optional Powerlevel10k, WezTerm config               |
+| **Java**          | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs                       |
+| **Devtools**      | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                                 |
+| **Python**        | [`python-setup.sh`](python-setup.sh)     | `pyenv` + build deps, pyenv shell wiring, the Python versions you choose, optional global default |
+| **Node.js**       | [`node-setup.sh`](node-setup.sh)         | `fnm` + fnm shell wiring, the Node.js versions you choose, optional global default                |
+| **Claude backup** | [`claude-backup.sh`](claude-backup.sh)   | Mirrors your user-level Claude Code config + memory to a synced folder; scans for stray secrets   |
 
 Each script is standalone — run only the ones you need, in any order.
 
@@ -255,25 +256,104 @@ once you restart your shell.
 
 ---
 
+## Claude backup
+
+[`claude-backup.sh`](claude-backup.sh) backs up the **user-level** Claude Code
+configuration — the part that makes Claude "know you" — so you can restore it on a fresh
+machine. It mirrors `~/.claude/` config and memory into a destination folder (default
+`~/Documents/claude-backup`, chosen because Documents syncs to OneDrive), then scans the
+result for stray secrets. It needs no `sudo` and edits no dotfiles.
+
+It never touches `~/.claude.json` (which holds MCP tokens and session history) or your
+credentials — those are re-established on the new machine, not copied.
+
+### What it backs up
+
+| Source (`~/.claude/…`) | Notes                                                    |
+|------------------------|----------------------------------------------------------|
+| `CLAUDE.md`            | Global instructions applied to every project.            |
+| `settings.json`        | Global harness config: model, permissions, `env`, hooks. |
+| `keybindings.json`     | Custom CLI keybindings.                                  |
+| `memory/`              | Global memory facts.                                     |
+| `commands/`            | Custom slash commands.                                   |
+| `agents/`              | Custom subagents.                                        |
+| `skills/`              | Custom skills.                                           |
+| `projects/*/memory/`   | Per-project memory facts.                                |
+
+Each source is copied **only if it exists**; missing ones are logged and skipped. The
+script also writes a `RESTORE.md` and `last-backup.txt` into the destination.
+
+### Usage
+
+```sh
+chmod +x claude-backup.sh && ./claude-backup.sh          # -> ~/Documents/claude-backup
+CLAUDE_BACKUP_DIR=~/some/dir ./claude-backup.sh          # custom destination
+```
+
+The script takes no prompts. Directories are mirrored with `rsync --delete` (the backup
+is an exact mirror of the source — files you delete are pruned on the next run), single
+files are overwritten, and a final **secret scan** warns (never blocks) if anything
+matching common token/key patterns landed in the backup.
+
+### After it runs
+
+- Review the warnings from the secret scan and rotate/redact anything real —
+  `settings.json` is copied as-is and may hold secrets in its `env` block or hooks.
+- Keep the backup in an **approved private location** — memory and instructions can carry
+  work context. Documents → OneDrive is fine; a public repo or personal cloud is not.
+- To restore on a new machine: run `claude login` to re-authenticate, copy the files back
+  into `~/.claude/` (same relative paths), and re-add MCP servers by hand. See the
+  generated `RESTORE.md` for the full checklist.
+
+### Automating it (launchd)
+
+To run the backup automatically on a schedule, use
+[`claude-backup-schedule.sh`](claude-backup-schedule.sh). It installs a per-user launchd
+LaunchAgent that runs `claude-backup.sh` every few hours — no `sudo`, no dotfile edits.
+
+| Command                                 | What it does                                                                    |
+|-----------------------------------------|---------------------------------------------------------------------------------|
+| `./claude-backup-schedule.sh [hours]`   | Install **or change** the schedule. `hours` defaults to `6` (four times a day). |
+| `./claude-backup-schedule.sh status`    | Show whether it's scheduled and the current interval.                           |
+| `./claude-backup-schedule.sh uninstall` | Remove the schedule.                                                            |
+
+```sh
+chmod +x claude-backup-schedule.sh
+./claude-backup-schedule.sh          # every 6 hours
+./claude-backup-schedule.sh 4        # change to every 4 hours (just re-run)
+```
+
+- Scheduled runs log to `~/Library/Logs/claude-backup.log`. The agent runs an immediate
+  first backup when loaded (`RunAtLoad`), then every N hours.
+- If the Mac is asleep at a scheduled time, launchd runs the job on the next wake, so
+  missed runs are caught up.
+- It honors `CLAUDE_BACKUP_DIR` — set it before installing to bake a custom destination
+  into the schedule, e.g. `CLAUDE_BACKUP_DIR=~/some/dir ./claude-backup-schedule.sh`.
+- After a manual `./claude-backup.sh` run, the script prints a one-line hint pointing here.
+
+---
+
 ## Roadmap
 
 Planned setups:
 
-- [ ] Terminal (WezTerm + Oh My Zsh)
-- [ ] Java (`jenv` + Corretto)
-- [ ] IntelliJ Toolbox for IDEs (Not required, install manually)
-- [ ] VS Code (Not required, install manually)
-- [ ] Obsidian (Not required, install manually)
+- [x] Terminal (WezTerm + Oh My Zsh)
+- [x] Java (`jenv` + Corretto)
 - [x] Python (`pyenv`)
 - [x] Node.js (`fnm`)
-- [ ] Docker Desktop
-- [ ] Maven
-- [ ] Bruno
-- [ ] git
-- [ ] awscli
-- [ ] dive
-
-Devtools like docker-desktop, bruno, maven, git, awscli, dive are installed using `devtools-setup.sh` 
+- [x] Devtools (all installed using Homebrew):
+  - Docker Desktop
+  - VS Code
+  - Obsidian
+  - Bruno
+  - Maven
+  - git
+  - awscli
+  - dive
+  - gh
+  - <if required, add/remove to/from `devtools-setup.sh`>
+- [x] IntelliJ Toolbox for IDEs (Not required, install manually)
+- [x] Backup Claude memory (`claude-backup.sh`)
 
 ## What these scripts deliberately do NOT do
 
@@ -311,6 +391,8 @@ To revert manually:
 ├── devtools-setup.sh        # developer tools (Maven, Docker Desktop, Bruno, git, AWS CLI, dive)
 ├── python-setup.sh          # pyenv + Python versions setup
 ├── node-setup.sh            # fnm + Node.js versions setup
+├── claude-backup.sh         # mirror user-level Claude Code config + memory to a synced folder
+├── claude-backup-schedule.sh # schedule claude-backup.sh via a launchd LaunchAgent
 ├── wezterm.lua              # WezTerm config (copied by terminal-setup.sh)
 ├── checklist.md             # roadmap of planned setups
 ├── README.md                # this file
@@ -333,6 +415,8 @@ it. Verify changes *without* running an installer end-to-end:
 /bin/bash -n devtools-setup.sh
 /bin/bash -n python-setup.sh
 /bin/bash -n node-setup.sh
+/bin/bash -n claude-backup.sh
+/bin/bash -n claude-backup-schedule.sh
 shellcheck terminal-setup.sh     # if installed
 ```
 

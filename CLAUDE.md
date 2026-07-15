@@ -29,6 +29,27 @@ scripts:
   `fnm install`, which resolves a partial like `20` to the latest matching release), and
   optionally sets one as the global default. Downloads prebuilt Node binaries, so there are
   no build dependencies and no compile step; needs no `sudo`.
+- [`claude-backup.sh`](claude-backup.sh) — mirrors the user-level Claude Code config that
+  makes Claude "know you" into a destination folder (default `~/Documents/claude-backup`,
+  overridable via `CLAUDE_BACKUP_DIR`): the single files `CLAUDE.md`, `settings.json`,
+  `keybindings.json`; the dirs `memory/`, `commands/`, `agents/`, `skills/`; and every
+  `projects/*/memory/`. Directories are mirrored with `rsync -a --delete`, single files
+  copied with `cp -p`; each source is copied only if it exists. It writes a `RESTORE.md`
+  and `last-backup.txt`, then runs a warn-only secret scan over the backup. Reads nothing
+  from `~/.claude.json` (deliberately excluded — MCP tokens + session history) and never
+  touches credentials. Takes no input, needs no `sudo`, and edits no dotfiles. On
+  interactive runs (`[ -t 1 ]`) it prints a one-line hint pointing at
+  `claude-backup-schedule.sh`; the hint is suppressed when output isn't a TTY (so scheduled
+  runs don't clutter the log).
+- [`claude-backup-schedule.sh`](claude-backup-schedule.sh) — schedules `claude-backup.sh`
+  via a per-user launchd LaunchAgent. Three subcommands dispatched on `$1`:
+  `[HOURS]` installs or changes the schedule (default `6`; validated as a positive
+  integer), `status` reports whether the agent is loaded and its interval, and `uninstall`
+  unloads + removes the plist. Writes
+  `~/Library/LaunchAgents/com.<user>.claude-backup.plist` (`StartInterval` = HOURS×3600,
+  `RunAtLoad` true, logging to `~/Library/Logs/claude-backup.log`) and bakes in
+  `CLAUDE_BACKUP_DIR`. Idempotent via overwrite + `launchctl unload`/`load`; needs no
+  `sudo` and edits no dotfiles.
 
 More setups are planned (see the roadmap in [README.md](README.md)).
 The constraints below apply to **every** script in the repo.
@@ -83,6 +104,19 @@ These are deliberate and load-bearing. Preserve them in every change.
   → 2 configure `~/.zshrc` → 3 pick + install Node versions → 4 optional global default →
   5 summary. No build deps and no compile step (fnm downloads prebuilt binaries); the
   `~/.zshrc` edit is guarded by a `# >>> fnm setup >>>` marker.
+- `claude-backup.sh` — the Claude Code config backup. Numbered sections: 0 preconditions →
+  1 copy single files → 2 copy directories → 3 per-project memory → 4 restore notes →
+  5 secret scan → 6 summary. The `SRC`/`DEST`/`FILES`/`DIRS` vars near the top drive it
+  (`DEST` defaults to `~/Documents/claude-backup`, overridable via `CLAUDE_BACKUP_DIR`).
+  `copy_file` (cp -p) and `copy_dir` (rsync -a --delete) both guard on the source
+  existing; the `append` helper builds the copied/skipped summary strings. Edits no
+  dotfiles and reads nothing from `~/.claude.json`. STEP 7 prints the automation hint,
+  gated on `[ -t 1 ]`.
+- `claude-backup-schedule.sh` — the launchd scheduler. Sections: 0 preconditions + shared
+  paths (`SELF_DIR`, `BACKUP_SCRIPT`, `LABEL`, `PLIST`, `LOG`) → 1 dispatch on `$1`
+  (`uninstall` / `status` / else install) → 2 compose plist → 3 (re)load → 4 summary.
+  Uses the same `log`/`warn`/`die` helpers. Note: don't name the seconds variable
+  `SECONDS` (a bash special var) — it uses `SECS`.
 - `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by
   `terminal-setup.sh` STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
@@ -123,6 +157,22 @@ JDKs. Instead:
   when `brew list fnm` fails; the `# >>> fnm setup >>>` block is appended only when
   `grep -qF` doesn't find its marker; and `fnm install` is itself a no-op when the resolved
   release is already present. Confirm a second run re-triggers none of them.
+- For `claude-backup.sh`, idempotency comes from mirroring rather than guards: `rsync -a
+  --delete` makes each backed-up directory an exact mirror of its source (a re-run
+  re-syncs, never duplicates, and prunes files removed at the source), and single files
+  are overwritten in place. Safe to run without an installer since it copies files only.
+  You can exercise it end-to-end against a throwaway `$HOME`: build a fake `~/.claude`
+  with a couple of files, point `HOME` at a temp dir, run it twice, and confirm the
+  destination tree is identical after both runs. The secret scan is warn-only (`|| true`),
+  so a match never aborts the backup.
+- For `claude-backup-schedule.sh`, do **not** run it directly to test — it invokes
+  `launchctl` against your real user session. Instead exercise it against a throwaway
+  `$HOME` with a stub `launchctl` on `PATH` (a tiny script that just echoes its args, so
+  `set -e` doesn't abort): copy both scripts into a temp dir so they're siblings, then
+  assert with `plutil -lint` / `plutil -extract StartInterval raw` that install writes a
+  valid plist with the right interval, a re-run updates it in place (no duplicate agent),
+  `uninstall` removes it and is a safe no-op the second time, and non-integer / zero
+  intervals `die`.
 
 ## Gotchas already found (don't reintroduce)
 

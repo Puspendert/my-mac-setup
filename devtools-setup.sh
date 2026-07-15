@@ -16,8 +16,8 @@
 set -euo pipefail
 
 # Homebrew packages to install.
-FORMULAE="maven git awscli dive"
-CASKS="docker-desktop bruno"
+FORMULAE="maven git awscli dive gh"
+CASKS="docker-desktop bruno visual-studio-code obsidian"
 
 # Result trackers (space-delimited; guard empty case when appending).
 INSTALLED=""
