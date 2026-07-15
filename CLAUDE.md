@@ -24,6 +24,11 @@ scripts:
   `pyenv`, adds a guarded pyenv block to `~/.zshrc`, installs the Python versions the user
   picks (via `pyenv install`, resolving `X.Y` prefixes with `pyenv latest`), and optionally
   sets one as the global default. Compiles Python from source; needs no `sudo`.
+- [`node-setup.sh`](node-setup.sh) — installs `fnm` (Fast Node Manager) via Homebrew, adds
+  a guarded fnm block to `~/.zshrc`, installs the Node.js versions the user picks (via
+  `fnm install`, which resolves a partial like `20` to the latest matching release), and
+  optionally sets one as the global default. Downloads prebuilt Node binaries, so there are
+  no build dependencies and no compile step; needs no `sudo`.
 
 More setups are planned (see the roadmap in [README.md](README.md)).
 The constraints below apply to **every** script in the repo.
@@ -74,6 +79,10 @@ These are deliberate and load-bearing. Preserve them in every change.
   → 5 optional global default → 6 summary. The build-dep list lives in the space-delimited
   `BUILD_DEPS` var near the top; the `~/.zshrc` edit is guarded by a `# >>> pyenv setup >>>`
   marker.
+- `node-setup.sh` — the Node.js setup. Numbered sections: 0 preconditions → 1 install fnm
+  → 2 configure `~/.zshrc` → 3 pick + install Node versions → 4 optional global default →
+  5 summary. No build deps and no compile step (fnm downloads prebuilt binaries); the
+  `~/.zshrc` edit is guarded by a `# >>> fnm setup >>>` marker.
 - `wezterm.lua` — WezTerm config; copied to `~/.config/wezterm/wezterm.lua` by
   `terminal-setup.sh` STEP 7.
 - `.claude/settings.json` — shared, safe verification permissions (committed).
@@ -110,6 +119,10 @@ JDKs. Instead:
   the build-dep loop skips any dep `brew list` already reports; and each Python version is
   installed only when `pyenv versions --bare` doesn't already list the resolved version.
   Confirm a second run re-triggers none of them.
+- For `node-setup.sh`, the idempotency guards to re-check by hand: fnm is installed only
+  when `brew list fnm` fails; the `# >>> fnm setup >>>` block is appended only when
+  `grep -qF` doesn't find its marker; and `fnm install` is itself a no-op when the resolved
+  release is already present. Confirm a second run re-triggers none of them.
 
 ## Gotchas already found (don't reintroduce)
 

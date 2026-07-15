@@ -16,6 +16,7 @@ other language runtimes (see [Roadmap](#roadmap)).
 | **Java**     | [`java-setup.sh`](java-setup.sh)         | `jenv` + Amazon Corretto JDKs, jenv shell wiring, optional truststore certs                       |
 | **Devtools** | [`devtools-setup.sh`](devtools-setup.sh) | Maven, Docker Desktop, Bruno, git, AWS CLI, and dive via Homebrew                                 |
 | **Python**   | [`python-setup.sh`](python-setup.sh)     | `pyenv` + build deps, pyenv shell wiring, the Python versions you choose, optional global default |
+| **Node.js**  | [`node-setup.sh`](node-setup.sh)         | `fnm` + fnm shell wiring, the Node.js versions you choose, optional global default                |
 
 Each script is standalone — run only the ones you need, in any order.
 
@@ -52,8 +53,7 @@ Each script is standalone — run only the ones you need, in any order.
 ### Usage
 
 ```sh
-chmod +x terminal-setup.sh
-./terminal-setup.sh
+chmod +x terminal-setup.sh && ./terminal-setup.sh
 ```
 
 The script pauses for input at two points:
@@ -109,8 +109,7 @@ JDK's truststore.
 ### Usage
 
 ```sh
-chmod +x java-setup.sh
-./java-setup.sh
+chmod +x java-setup.sh && ./java-setup.sh
 ```
 
 The script prompts you for:
@@ -152,8 +151,7 @@ Homebrew. Anything already installed is logged and skipped, so it's safe to re-r
 ### Usage
 
 ```sh
-chmod +x devtools-setup.sh
-./devtools-setup.sh
+chmod +x devtools-setup.sh && ./devtools-setup.sh
 ```
 
 The script takes no input. It checks each tool with `brew list` (or `brew list --cask`),
@@ -189,8 +187,7 @@ dependencies are installed first.
 ### Usage
 
 ```sh
-chmod +x python-setup.sh
-./python-setup.sh
+chmod +x python-setup.sh && ./python-setup.sh
 ```
 
 The script prompts you for:
@@ -213,6 +210,51 @@ version once you restart your shell.
 
 ---
 
+## Node setup
+
+[`node-setup.sh`](node-setup.sh) installs [`fnm`](https://github.com/Schniz/fnm) (Fast
+Node Manager), installs the Node.js versions you choose, and wires fnm into your
+`~/.zshrc` so you can switch Node versions per-shell or per-project — the Node equivalent
+of the Java (`jenv`) and Python (`pyenv`) setups. fnm downloads **prebuilt** Node
+binaries, so there are no build dependencies and no compile step.
+
+### What it sets up
+
+| Component                 | Notes                                                                                                                                                                |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **fnm**                   | Installed via Homebrew if missing.                                                                                                                                   |
+| **fnm shell integration** | Adds a guarded `# >>> fnm setup >>>` block to `~/.zshrc` (never duplicated). Uses `--use-on-cd` so fnm auto-switches when you `cd` into a project.                   |
+| **Node.js versions**      | You pick them (e.g. `20,22,24`); a partial like `20` resolves to the latest matching release. Each is installed with `fnm install`. Failures are logged and skipped. |
+| **Global default**        | Optional (you're prompted). Sets the first installed version as the global Node via `fnm default`.                                                                   |
+
+### Usage
+
+```sh
+chmod +x node-setup.sh && ./node-setup.sh
+```
+
+The script prompts you for:
+
+1. **Node.js versions** — comma-separated majors or exact versions (e.g. `20,22,24` or
+   `20.11.0`).
+2. **Global default** — a `y/N` prompt to set the first installed version as your global
+   Node.
+
+### After it runs
+
+- **Open a new terminal** (or `source ~/.zshrc`) so the fnm integration takes effect.
+- Set a global default: `fnm default 22`
+- Pin a version per project: `cd my-project && echo "22" > .node-version` (a `.nvmrc`
+  works too — `--use-on-cd` switches automatically when you enter the directory).
+- Confirm: `node --version`
+
+fnm shims are on your `PATH` via the setup block, so `node` follows the active fnm version
+once you restart your shell.
+
+**Docs:** [fnm](https://github.com/Schniz/fnm)
+
+---
+
 ## Roadmap
 
 Planned setups:
@@ -223,7 +265,7 @@ Planned setups:
 - [ ] VS Code (Not required, install manually)
 - [ ] Obsidian (Not required, install manually)
 - [x] Python (`pyenv`)
-- [ ] Node.js
+- [x] Node.js (`fnm`)
 - [ ] Docker Desktop
 - [ ] Maven
 - [ ] Bruno
@@ -268,6 +310,7 @@ To revert manually:
 ├── java-setup.sh            # jenv + Corretto Java setup
 ├── devtools-setup.sh        # developer tools (Maven, Docker Desktop, Bruno, git, AWS CLI, dive)
 ├── python-setup.sh          # pyenv + Python versions setup
+├── node-setup.sh            # fnm + Node.js versions setup
 ├── wezterm.lua              # WezTerm config (copied by terminal-setup.sh)
 ├── checklist.md             # roadmap of planned setups
 ├── README.md                # this file
@@ -289,6 +332,7 @@ it. Verify changes *without* running an installer end-to-end:
 /bin/bash -n java-setup.sh
 /bin/bash -n devtools-setup.sh
 /bin/bash -n python-setup.sh
+/bin/bash -n node-setup.sh
 shellcheck terminal-setup.sh     # if installed
 ```
 
